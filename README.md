@@ -25,5 +25,10 @@ yarn run test
 yarn run lint
 ```
 
+### Deploy page
+```
+git subtree push --prefix dist origin gh-pages
+```
+
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
