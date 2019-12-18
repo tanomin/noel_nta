@@ -1,10 +1,11 @@
 <template>
   <div id="app" class="container">
-    <div class="row">
-      <a href="javascript:;" @click="isEditList = !isEditList">Chinh sua danh sach</a>
+    <div class="row" style="margin-bottom: 20px">
+      <a href="javascript:;" @click="isEditList = !isEditList">{{isEditList ?  'Đóng chỉnh sửa danh sách tham dự' :'Mở chỉnh sửa danh sách tham dự' }}</a>
     </div>
     <div v-show="isEditList">
       <div class="row">
+        <p>Mỗi lần chỉnh sửa danh sách tham dự là danh sách người tặng quà và nhận quà sẽ tự động sắp xếp ngẫu nhiên</p>
         <div style="margin-right: auto"></div>
         <a href="javascript:;" class="btn btn-danger" @click="reset">Reset</a>
       </div>
@@ -21,7 +22,7 @@
 
     </div>
     <div class="row">
-      <h4>Tổng số người tham gia: {{mems.length}}</h4>
+      <h4>Tổng số người tham gia: {{mems.length}}/{{users.length}}</h4>
       <div style="margin-right: auto"></div>
       <a href="javascript:;" @click="onCreateTeamRandom" class="btn btn-secondary">Tạo ngẫu nhiên</a>
     </div>
