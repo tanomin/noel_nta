@@ -1,7 +1,10 @@
 <template>
   <div id="app" class="container">
     <div class="row" style="margin-bottom: 20px">
-      <a href="javascript:;" @click="isEditList = !isEditList">{{isEditList ?  'Đóng chỉnh sửa danh sách tham dự' :'Mở chỉnh sửa danh sách tham dự' }}</a>
+      <a href="javascript:;" @click="isEditList = !isEditList">{{menuTitle}}
+
+      </a>
+
     </div>
     <div v-show="isEditList">
       <div class="row">
@@ -24,38 +27,48 @@
     <div class="row">
       <h4>Tổng số người tham gia: {{mems.length}}/{{users.length}}</h4>
       <div style="margin-right: auto"></div>
-      <a href="javascript:;" @click="onCreateTeamRandom" class="btn btn-secondary">Tạo ngẫu nhiên</a>
-    </div>
-    <div class="row" style="margin-top: 20px">
-      <a href="javascript:;" @click="back" class="btn btn-secondary">Back</a>
-      <a href="javascript:;" style="margin-left: 10px" @click="next" class="btn btn-secondary">Next</a>
-      <div style="margin-right: auto"></div>
-      <div class="form-check btn">
-        <input type="checkbox" class="form-check-input" id="exampleCheck1" v-model="dispPresenter">
-        <label class="form-check-label" for="exampleCheck1">Ẩn danh sách nhận quà</label>
-      </div>
     </div>
     <div class="row team_area">
-      <div class="col-5">
-        <h4>Bên tặng quà</h4>
+      <div class="col-6">
         <ul class="list-group">
-          <li class="list-group-item"
-              :class="{'active': idx === active, 'hide':  (idx < active || idx > active)&& dispPresenter}"
-              v-for="(i,idx) in presenters" :key="idx">
-            {{i.name}}
-          </li>
+          <transition name="slide-fade" mode="out-in">
+            <template v-if="sender.name">
+              <li class="list-group-item typewriter active" :key="sender.name">
+                {{sender.name}}
+              </li>
+            </template>
+            <template v-else>
+              <li class="list-group-item finder">
+                🧐
+              </li>
+            </template>
+          </transition>
         </ul>
+        <div class="btn_c" @click="onGetSender" :class="{'disabled': flg !== false}">
+          <h4>Tặng quà</h4>
+          <span v-if="flg === false">👆🏻</span>
+        </div>
       </div>
       <div style="margin-right: auto"></div>
-      <div class="col-5">
-        <h4>Bên nhận quà</h4>
+      <div class="col-6">
         <ul class="list-group">
-          <li class="list-group-item"
-              :class="{'active': idx === active, 'hide':   (idx < active || idx > active) && dispPresenter }"
-              v-for="(i,idx) in receivers" :key="idx">
-            {{i.name}}
-          </li>
+          <transition name="slide-fade" mode="out-in">
+            <template v-if="receiver.name">
+              <li class="list-group-item typewriter active" :key="receiver.name">
+                {{receiver.name}}
+              </li>
+            </template>
+            <template v-else>
+              <li class="list-group-item finder">
+                🧐
+              </li>
+            </template>
+          </transition>
         </ul>
+        <div class="btn_c" @click="onGetReceiver" :class="{'disabled': flg !== true}">
+          <h4>Nhận quà</h4>
+          <span v-if="flg === true">👆🏻</span>
+        </div>
       </div>
     </div>
   </div>
@@ -75,13 +88,21 @@
         active: -1,
         dispPresenter: true,
         mems: [],
+        sender: {},
+        receiver: {},
+        flg: false,
       };
     },
-    computed: {},
+    computed: {
+      menuTitle() {
+        return this.isEditList ? 'Đóng chỉnh sửa danh sách tham dự' : 'Mở chỉnh sửa danh sách tham dự';
+      },
+    },
     watch: {
       mems() {
         window.localStorage.setItem('users', JSON.stringify(this.mems));
-        this.randomTeam()
+        this.presenters = this.mems.slice();
+        this.receivers = this.mems.slice();
       },
     },
     methods: {
@@ -108,44 +129,39 @@
 
         recursive_play();
       },
-      speak() {
-        let send = this.presenters[this.active];
-        let rect = this.receivers[this.active];
-        if (!send || !rect) {
+      speak(file) {
+        if (!file) {
           return;
         }
-        this.queue_sounds([
-          new Audio(require('../voice/' + send.voice_send + '.mp3')),
-          new Audio(require('../voice/' + rect.voice_rec + '.mp3'))],
-        );
+        this.queue_sounds([new Audio(require('../voice/' + file + '.mp3'))]);
       },
-      randomTeam() {
-        this.presenters = this.mems.concat().sort(function() {
-          return 0.5 - Math.random();
-        });
-        let temp = this.mems.slice();
-        let rs = [];
-        while (temp.length > 0) {
-          rs.push(temp.splice(this.getRandUniqueRec(rs.length, temp), 1)[0]);
+      onGetSender() {
+        if (confirm('Chắc chắn chưa?')) {
+          this.sender = this.presenters.splice(Math.floor(Math.random() * this.presenters.length), 1)[0];
+          this.flg = !this.flg;
+          this.receiver = {};
+          const t = this;
+          setTimeout(function() {
+            t.speak(t.sender.voice_send);
+          }, 2000);
         }
-        this.receivers = rs;
+
       },
-      onCreateTeamRandom() {
-        if (confirm('Bạn có chắc muốn random lại?')) {
-          this.randomTeam();
+      onGetReceiver() {
+        if (confirm('Chắc chắn chưa?')) {
+          this.receiver = this.receivers.splice(Math.floor(Math.random() * this.presenters.length), 1)[0];
+          this.flg = !this.flg;
+          const t = this;
+          setTimeout(function() {
+            t.speak(t.receiver.voice_rec);
+          }, 2000);
+
         }
       },
-      back() {
-        if (this.active > -1) {
-          this.active--;
-        }
-        this.speak();
-      },
-      next() {
-        if (this.active < this.mems.length) {
-          this.active++;
-        }
-        this.speak();
+      delay(time) {
+        setTimeout(function() {
+          //your code to be executed after 1 second
+        }, time);
       },
       getRandUniqueRec(i, arr) {
         let idx = -1;
@@ -171,20 +187,91 @@
       } else {
         this.mems = this.users.slice();
       }
-      this.randomTeam();
-      // window.addEventListener('scroll', this.handleDebouncedScroll);
+      this.presenters = this.mems.slice();
+      this.receivers = this.mems.slice();
     },
     beforeDestroy() {
-      // I switched the example from `destroyed` to `beforeDestroy`
-      // to exercise your mind a bit. This lifecycle method works too.
-      // window.removeEventListener('scroll', this.handleDebouncedScroll);
     },
   };
 </script>
 
 <style scoped>
+  .disabled {
+    pointer-events: none;
+  }
+
+  .finder {
+    font-size: 32px;
+    text-align: center;
+    padding: 0;
+  }
+
+  .slide-fade-enter-active {
+    transition: all 1s ease;
+  }
+
+  .slide-fade-leave-active {
+    transition: all 2s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+  }
+
+  .slide-fade-enter, .slide-fade-leave-to
+    /* .slide-fade-leave-active for <2.1.8 */
+  {
+    transform: translateX(10px);
+    opacity: 0;
+  }
+
   .hide {
     display: none !important;
+  }
+
+  .list-group {
+    margin-top: 40px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .btn_c {
+    margin-top: 100px;
+    cursor: pointer;
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+  }
+
+  .btn_c span {
+    font-size: 30px;
+    position: absolute;
+  }
+
+  .btn_c span {
+    -webkit-animation-name: moveit; /* Safari 4.0 - 8.0 */
+    -webkit-animation-duration: 1.5s; /* Safari 4.0 - 8.0 */
+    animation-name: moveit;
+    animation-duration: 1.5s;
+    animation-iteration-count: infinite;
+  }
+
+  /* Safari 4.0 - 8.0 */
+  @-webkit-keyframes moveit {
+    from {
+      top: 15px
+    }
+    to {
+      top: 30px
+    }
+  }
+
+  /* Standard syntax */
+  @keyframes moveit {
+    from {
+      top: 15px
+    }
+    to {
+      top: 30px
+    }
   }
 
   #app {
@@ -196,4 +283,33 @@
     margin-top: 20px;
   }
 
+  /*.typewriter {*/
+  /*  overflow: hidden; !* Ensures the content is not revealed until the animation *!*/
+  /*  border-right: .15em solid orange; !* The typwriter cursor *!*/
+  /*  white-space: nowrap; !* Keeps the content on a single line *!*/
+  /*  margin: 0 auto; !* Gives that scrolling effect as the typing happens *!*/
+  /*  letter-spacing: .15em; !* Adjust as needed *!*/
+  /*  animation: typing 10s steps(40, end),*/
+  /*  blink-caret .75s step-end infinite;*/
+  /*}*/
+
+  /*!* The typing effect *!*/
+  /*@keyframes typing {*/
+  /*  from {*/
+  /*    width: 0*/
+  /*  }*/
+  /*  to {*/
+  /*    width: 100%*/
+  /*  }*/
+  /*}*/
+
+  /* The typewriter cursor effect */
+  @keyframes blink-caret {
+    from, to {
+      border-color: transparent
+    }
+    50% {
+      border-color: orange;
+    }
+  }
 </style>
