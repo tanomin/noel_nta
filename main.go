@@ -16,12 +16,13 @@ import (
 
 type User struct {
 	Name      string `json:"name"`
+	Gender    string `json:"gender"`
 	VoiceSend string `json:"voice_send"`
 	VoiceRec  string `json:"voice_rec"`
 }
 
 func main() {
-	getVoiceGG("Chào mừng đến với Tiệc noel của công ty Nitrotech asia","wellcome")
+	getVoiceGG("Chào mừng đến với Tiệc noel của công ty Nitrotech asia", "wellcome")
 	filename := "./src/list.json"
 	file, _ := ioutil.ReadFile(filename)
 	var mems []User
@@ -31,12 +32,17 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(len(mems) * 2)
+
 	for i, _ := range mems {
 		go func(idx int) {
 			defer wg.Done()
 			mu.Lock()
 			item := &mems[idx]
-			item.VoiceSend = getVoiceGG(item.Name+" lên tặng quà", "")
+			sex := " anh "
+			if item.Gender != "" {
+				sex = " chị "
+			}
+			item.VoiceSend = getVoiceGG("Xin mời"+sex+item.Name+" lên tặng quà", "")
 			mu.Unlock()
 
 		}(i)
@@ -44,7 +50,11 @@ func main() {
 			defer wg.Done()
 			mu.Lock()
 			item := &mems[idx]
-			item.VoiceRec = getVoiceGG(item.Name+" lên nhận quà", "")
+			sex := " anh "
+			if item.Gender != "" {
+				sex = " chị "
+			}
+			item.VoiceRec = getVoiceGG("Xin mời"+sex+item.Name+" lên nhận quà", "")
 			mu.Unlock()
 		}(i)
 	}

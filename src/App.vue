@@ -2,31 +2,32 @@
   <div id="app" class="container">
     <div class="row" style="margin-bottom: 20px">
       <a href="javascript:;" @click="isEditList = !isEditList">{{menuTitle}}
-
       </a>
-
     </div>
     <div v-show="isEditList">
-      <div class="row">
-        <p>Mỗi lần chỉnh sửa danh sách tham dự là danh sách người tặng quà và nhận quà sẽ tự động sắp xếp ngẫu nhiên</p>
+      <div class="" style="display: flex">
+        <p>Chỉnh sửa danh sách tham dự sẽ reset danh sách người tặng quà và nhận quà lại ban đầu</p>
         <div style="margin-right: auto"></div>
-        <a href="javascript:;" class="btn btn-danger" @click="reset">Reset</a>
+        <div><a href="javascript:;" class="btn btn-danger" @click="reset">Reset</a></div>
       </div>
       <div class="row">
-        <ul class="list-group">
-          <li class="list-group-item" v-for="(i, idx) in users" :key="idx">
-            <div class="form-check btn">
-              <input class="form-check-input" type="checkbox" :id="idx + '-checkuser'" v-model="mems" :value="i">
-              <label class="form-check-label" :for="idx + '-checkuser'">{{i.name}}</label>
-            </div>
-          </li>
-        </ul>
+        <div style="overflow-y: auto; max-height: 400px; border: 1px solid #ccc; padding: 20px 0">
+          <ul class="list-group">
+            <li class="list-group-item" v-for="(i, idx) in users" :key="idx">
+              <div class="form-check btn">
+                <input class="form-check-input" type="checkbox" :id="idx + '-checkuser'" v-model="mems" :value="i">
+                <label class="form-check-label" :for="idx + '-checkuser'">{{i.name}}</label>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
-
+    </div>
+    <div style="margin-top: 20px" class="row">
+      <h4>Tổng số người tham gia: {{mems.length}}/{{users.length}}</h4>
     </div>
     <div class="row">
-      <h4>Tổng số người tham gia: {{mems.length}}/{{users.length}}</h4>
-      <div style="margin-right: auto"></div>
+      <p>Còn lại: {{presenters.length}} người tặng vs {{receivers.length}} người nhận</p>
     </div>
     <div class="row team_area">
       <div class="col-6">
@@ -44,9 +45,9 @@
             </template>
           </transition>
         </ul>
-        <div class="btn_c" @click="onGetSender" :class="{'disabled': flg !== false}">
+        <div class="btn_c" @click="onGetSender" :class="{'disabled': flg !== false ||  presenters.length===0}">
           <h4>Tặng quà</h4>
-          <span v-if="flg === false">👆🏻</span>
+          <span v-if="flg === false && presenters.length">👆🏻</span>
         </div>
       </div>
       <div style="margin-right: auto"></div>
@@ -65,11 +66,18 @@
             </template>
           </transition>
         </ul>
-        <div class="btn_c" @click="onGetReceiver" :class="{'disabled': flg !== true}">
+        <div class="btn_c" @click="onGetReceiver" :class="{'disabled': flg !== true || receivers.length === 0}">
           <h4>Nhận quà</h4>
-          <span v-if="flg === true">👆🏻</span>
+          <span v-if="flg === true && receivers.length">👆🏻</span>
         </div>
       </div>
+    </div>
+    <div class="row">
+      <ul class="nav events">
+        <li v-for="(i, idx) in sounds" :key="idx" class="nav-item">
+          <a href="javascript:;" class="btn " @click="speak(i.voice)">{{i.name}}</a>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
@@ -81,16 +89,24 @@
     name: 'app',
     data() {
       return {
+        sounds: [
+          {'name': '👏', voice: 'clap'},
+          {'name': '🕐', voice: 'timeout'},
+          {'name': '👌', voice: 'correct'},
+          {'name': '👎', voice: 'wrong'},
+          {'name': '👍', voice: 'win'},
+        ],
         users: [],
         isEditList: false,
         presenters: [],
         receivers: [],
         active: -1,
-        dispPresenter: true,
         mems: [],
         sender: {},
         receiver: {},
         flg: false,
+        errors: {},
+        isLoaded: false,
       };
     },
     computed: {
@@ -100,9 +116,33 @@
     },
     watch: {
       mems() {
-        window.localStorage.setItem('users', JSON.stringify(this.mems));
-        this.presenters = this.mems.slice();
-        this.receivers = this.mems.slice();
+        if (this.isLoaded) {
+          window.localStorage.setItem('users', JSON.stringify(this.mems));
+          this.presenters = this.mems.slice();
+          this.receivers = this.mems.slice();
+          this.sender = {};
+          this.receiver = {};
+          this.flg = false;
+        } else {
+          this.isLoaded = true;
+        }
+      },
+      sender(val) {
+        window.localStorage.setItem('sender', JSON.stringify(val));
+      },
+      receiver(val) {
+        window.localStorage.setItem('receiver', JSON.stringify(val));
+      },
+      presenters(val) {
+        window.localStorage.setItem('presenters', JSON.stringify(val));
+        window.localStorage.setItem('sender', JSON.stringify(this.sender));
+      },
+      receivers(val) {
+        window.localStorage.setItem('receivers', JSON.stringify(val));
+        window.localStorage.setItem('receiver', JSON.stringify(this.receiver));
+      },
+      flg(val) {
+        window.localStorage.setItem('flg', JSON.stringify(val));
       },
     },
     methods: {
@@ -112,6 +152,7 @@
           audio.onended = callback;
         }
       },
+
       queue_sounds(sounds) {
         var index = 0;
         const t = this;
@@ -149,7 +190,8 @@
       },
       onGetReceiver() {
         if (confirm('Chắc chắn chưa?')) {
-          this.receiver = this.receivers.splice(Math.floor(Math.random() * this.presenters.length), 1)[0];
+          let idx = this.getRandUniqueRec(this.receivers);
+          this.receiver = this.receivers.splice(idx, 1)[0];
           this.flg = !this.flg;
           const t = this;
           setTimeout(function() {
@@ -163,14 +205,20 @@
           //your code to be executed after 1 second
         }, time);
       },
-      getRandUniqueRec(i, arr) {
+      getRandUniqueRec(arr) {
         let idx = -1;
-        if (arr.length == 1) {
+        let len = arr.length;
+        if (len === 1) {
           return 0;
         }
+        if (len === 2) {
+          return arr[0].name.localeCompare(this.sender.name) !== 0
+          && arr[1].name.localeCompare(this.presenters[0].name) === 0 ? 1 : 0;
+        }
         do {
-          idx = Math.floor(Math.random() * arr.length);
-        } while (arr[idx] == this.presenters[i]);
+          idx = Math.floor(Math.random() * len);
+        } while (arr[idx].name.localeCompare(this.sender.name) === 0);
+
         return idx;
       },
       reset() {
@@ -179,16 +227,35 @@
         }
       },
     },
+    mounted() {
+    },
     created() {
-      this.queue_sounds([new Audio(require('../voice/wellcome.mp3'))]);
+      window.onload = function() {
+        var audio = document.createElement('AUDIO');
+        document.body.appendChild(audio);
+        audio.play();
+      };
       this.users = List;
       if (window.localStorage.getItem('users')) {
         this.mems = JSON.parse(window.localStorage.getItem('users'));
       } else {
         this.mems = this.users.slice();
       }
-      this.presenters = this.mems.slice();
-      this.receivers = this.mems.slice();
+      if (window.localStorage.getItem('presenters')) {
+        this.presenters = JSON.parse(window.localStorage.getItem('presenters'));
+      }
+      if (window.localStorage.getItem('receivers')) {
+        this.receivers = JSON.parse(window.localStorage.getItem('receivers'));
+      }
+      if (window.localStorage.getItem('sender')) {
+        this.sender = JSON.parse(window.localStorage.getItem('sender'));
+      }
+      if (window.localStorage.getItem('receiver')) {
+        this.receiver = JSON.parse(window.localStorage.getItem('receiver'));
+      }
+      if (window.localStorage.getItem('flg')) {
+        this.flg = JSON.parse(window.localStorage.getItem('flg'));
+      }
     },
     beforeDestroy() {
     },
@@ -198,6 +265,7 @@
 <style scoped>
   .disabled {
     pointer-events: none;
+    border: none !important;
   }
 
   .finder {
@@ -226,13 +294,27 @@
   }
 
   .list-group {
-    margin-top: 40px;
     user-select: none;
     -webkit-user-select: none;
   }
 
+  .events {
+    position: fixed;
+    bottom: 20px;
+  }
+
+  .events li {
+    border: 1px solid #ccc;
+  }
+
+  .events li a {
+    font-size: 30px !important;
+  }
+
   .btn_c {
+    border: 1px solid #ccc;
     margin-top: 100px;
+    padding-top: 4px;
     cursor: pointer;
     display: flex;
     position: relative;
