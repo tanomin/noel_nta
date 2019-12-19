@@ -72,7 +72,7 @@
         </div>
       </div>
     </div>
-    <div class="row">
+    <div class="row" v-show="!isEditList">
       <ul class="nav events">
         <li v-for="(i, idx) in sounds" :key="idx" class="nav-item">
           <a href="javascript:;" class="btn " @click="speak(i.voice)">{{i.name}}</a>

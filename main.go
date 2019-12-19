@@ -40,7 +40,7 @@ func main() {
 			mu.Lock()
 			item := &mems[idx]
 			if item.NameKana != "" {
-				item.VoiceSend = getVoiceGG(item.NameKana+"さん、プレゼントを渡してください。", "", "jp")
+				item.VoiceSend = getVoiceGG(item.NameKana+"さん、プレゼントを渡してください。", "", "ja")
 			} else {
 				sex := " anh "
 				if item.Gender != "" {
@@ -56,7 +56,7 @@ func main() {
 			mu.Lock()
 			item := &mems[idx]
 			if item.NameKana != "" {
-				item.VoiceRec = getVoiceGG(item.NameKana+"さん、プレゼントを受け取ってください。", "", "jp")
+				item.VoiceRec = getVoiceGG(item.NameKana+"さん、プレゼントを受け取ってください。", "", "ja")
 			} else {
 				sex := " anh "
 				if item.Gender != "" {
