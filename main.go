@@ -19,10 +19,11 @@ type User struct {
 	Gender    string `json:"gender"`
 	VoiceSend string `json:"voice_send"`
 	VoiceRec  string `json:"voice_rec"`
+	NameKana  string `json:"name_kana"`
 }
 
 func main() {
-	getVoiceGG("Chào mừng đến với Tiệc noel của công ty Nitrotech asia", "wellcome")
+	getVoiceGG("Chào mừng đến với Tiệc noel của công ty Nitrotech ASia", "wellcome", "")
 	filename := "./src/list.json"
 	file, _ := ioutil.ReadFile(filename)
 	var mems []User
@@ -38,11 +39,15 @@ func main() {
 			defer wg.Done()
 			mu.Lock()
 			item := &mems[idx]
-			sex := " anh "
-			if item.Gender != "" {
-				sex = " chị "
+			if item.NameKana != "" {
+				item.VoiceSend = getVoiceGG(item.NameKana+"さん、プレゼントを渡してください。", "", "jp")
+			} else {
+				sex := " anh "
+				if item.Gender != "" {
+					sex = " chị "
+				}
+				item.VoiceSend = getVoiceGG("Xin mời"+sex+item.Name+" lên tặng quà", "", "")
 			}
-			item.VoiceSend = getVoiceGG("Xin mời"+sex+item.Name+" lên tặng quà", "")
 			mu.Unlock()
 
 		}(i)
@@ -50,11 +55,16 @@ func main() {
 			defer wg.Done()
 			mu.Lock()
 			item := &mems[idx]
-			sex := " anh "
-			if item.Gender != "" {
-				sex = " chị "
+			if item.NameKana != "" {
+				item.VoiceRec = getVoiceGG(item.NameKana+"さん、プレゼントを受け取ってください。", "", "jp")
+			} else {
+				sex := " anh "
+				if item.Gender != "" {
+					sex = " chị "
+				}
+				item.VoiceRec = getVoiceGG("Xin mời"+sex+item.Name+" lên nhận quà", "", "")
 			}
-			item.VoiceRec = getVoiceGG("Xin mời"+sex+item.Name+" lên nhận quà", "")
+
 			mu.Unlock()
 		}(i)
 	}
@@ -64,8 +74,11 @@ func main() {
 	ioutil.WriteFile(filename, jsonString, os.ModePerm)
 }
 
-func getVoiceGG(text string, name string) string {
-	url := "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=" + url.QueryEscape(text) + "&tl=vi&total=1&idx=0&textlen=5&prev=input"
+func getVoiceGG(text string, name string, lang string) string {
+	if lang == "" {
+		lang = "vi"
+	}
+	url := "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=" + url.QueryEscape(text) + "&tl=" + lang + "&total=1&idx=0&textlen=5&prev=input"
 
 	return downloadFile(url, name)
 }
