@@ -177,7 +177,6 @@
         this.queue_sounds([new Audio(require('../voice/' + file + '.mp3'))]);
       },
       onGetSender() {
-        if (confirm('Chắc chắn chưa?')) {
           this.sender = this.presenters.splice(Math.floor(Math.random() * this.presenters.length), 1)[0];
           this.flg = !this.flg;
           this.receiver = {};
@@ -185,11 +184,9 @@
           setTimeout(function() {
             t.speak(t.sender.voice_send);
           }, 2000);
-        }
 
       },
       onGetReceiver() {
-        if (confirm('Chắc chắn chưa?')) {
           let idx = this.getRandUniqueRec(this.receivers);
           this.receiver = this.receivers.splice(idx, 1)[0];
           this.flg = !this.flg;
@@ -197,8 +194,6 @@
           setTimeout(function() {
             t.speak(t.receiver.voice_rec);
           }, 2000);
-
-        }
       },
       delay(time) {
         setTimeout(function() {

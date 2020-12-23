@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -22,13 +24,52 @@ type User struct {
 	NameKana  string `json:"name_kana"`
 }
 
+const (
+	NameCol     = 1
+	NameKanaCol = 2
+	AttendCol   = 3
+	GenderCol   = 4
+)
+
+func readCSV(filePath string) []User {
+	f, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal("Unable to read input file "+filePath, err)
+	}
+	defer f.Close()
+
+	lines, err := csv.NewReader(f).ReadAll()
+	if err != nil {
+		log.Fatal("Unable to parse file as CSV for "+filePath, err)
+	}
+
+	list := make([]User, 0)
+	lines = lines[1:]
+	for _, line := range lines {
+		if strings.TrimSpace(line[AttendCol]) != "O" {
+			continue
+		}
+		user := User{
+			Name:      line[NameCol],
+			Gender:    line[GenderCol],
+			VoiceSend: "",
+			VoiceRec:  "",
+			NameKana:  line[NameKanaCol],
+		}
+		list = append(list, user)
+	}
+
+	return list
+}
+
 func main() {
+
 	getVoiceGG("Chào mừng đến với Tiệc noel của công ty Nitrotech ASia", "wellcome", "")
 	filename := "./src/list.json"
-	file, _ := ioutil.ReadFile(filename)
-	var mems []User
-	_ = json.Unmarshal(file, &mems)
-
+	//file, _ := ioutil.ReadFile(filename)
+	//var mems []User
+	//_ = json.Unmarshal(file, &mems)
+	mems := readCSV("ds.csv")
 	var mu sync.Mutex
 
 	var wg sync.WaitGroup
