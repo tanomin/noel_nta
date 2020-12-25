@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="container">
+  <div  class="container"  style="color: white" >
     <div class="row" style="margin-bottom: 20px">
       <a href="javascript:;" @click="isEditList = !isEditList">{{ menuTitle }}
       </a>
@@ -84,7 +84,7 @@
 
 <script>
 /* eslint-disable */
-import List from './list.json';
+import List from '../list.json';
 import Firebase from "firebase/app";
 import "firebase/firestore";
 
@@ -177,11 +177,17 @@ export default {
       commandRef.onSnapshot((snap) => {
         snap.docChanges().forEach(change => {
           if (change.type === "modified") {
-            if (t.flg) {
-              this.onGetReceiver()
-            } else {
-              this.onGetSender()
+            let cmd = change.doc.data().cmd
+            if(cmd == '1'){
+              if (t.flg) {
+                this.onGetReceiver()
+              } else {
+                this.onGetSender()
+              }
+            }else{
+              t.speak(t.sounds[cmd - 2].voice)
             }
+
           }
         })
       })
@@ -214,7 +220,7 @@ export default {
       if (!file) {
         return;
       }
-      this.queue_sounds([new Audio(require('../voice/' + file + '.mp3'))]);
+      this.queue_sounds([new Audio(require('../../voice/' + file + '.mp3'))]);
     },
     onGetSender() {
       this.sender = this.presenters.splice(Math.floor(Math.random() * this.presenters.length), 1)[0];
@@ -340,7 +346,9 @@ export default {
 }
 
 .events li {
-  border: 1px solid #ccc;
+  margin: 0 10px;
+  background: white;
+  border-radius: 100%;
 }
 
 .events li a {
@@ -357,6 +365,9 @@ export default {
   flex-direction: column;
   align-items: center;
   user-select: none;
+  background: white;
+  color: black;
+  border-radius: 20px;
 }
 
 .btn_c span {
